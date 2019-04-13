@@ -246,11 +246,11 @@ class _EmojiPickerState extends State<EmojiPicker> {
 
   /// Returns the emoji history of the user
   List<String> getEmojiHistory() {
-    if (prefs.getStringList('lastSelectedEmojis') == null) {
+    try {
+      return prefs.getStringList('lastSelectedEmojis').reversed;
+    } catch (e) {
       List<String> newHistory = [];
       prefs.setStringList('lastSelectedEmojis', newHistory);
-      return prefs.getStringList('lastSelectedEmojis').reversed;
-    } else {
       return prefs.getStringList('lastSelectedEmojis').reversed;
     }
   }
