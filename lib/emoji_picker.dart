@@ -220,9 +220,6 @@ class CategoryIcons {
 
 }
 
-
-
-
 class Emoji {
 
   final String name;
@@ -240,9 +237,44 @@ class Emoji {
 
 }
 
-
-
 class _EmojiPickerState extends State<EmojiPicker> {
+  SharedPreferences prefs;
+
+  void initializePrefs() async {
+    prefs = await SharedPreferences.getInstance();
+  }
+
+  /// Returns the emoji history of the user
+  List<String> getEmojiHistory() {
+    if (prefs.getStringList('lastSelectedEmojis') == null) {
+      List<String> newHistory = [];
+      prefs.setStringList('lastSelectedEmojis', newHistory);
+      return prefs.getStringList('lastSelectedEmojis').reversed;
+    } else {
+      return prefs.getStringList('lastSelectedEmojis').reversed;
+    }
+  }
+
+  /// Adds an emoji to the users history, if it was selected
+  void addEmojiToHistory(String emoji) {
+    List<String> history = getEmojiHistory().reversed;
+    /// Removes the selected Emoji, if it was selected before
+    history.remove(emoji);
+    /// Adds the emoji at the last index, so it will appear at first
+    history.add(emoji);
+    prefs.setStringList('lastSelectedEmojis', history);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    initializePrefs();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -250,6 +282,24 @@ class _EmojiPickerState extends State<EmojiPicker> {
     int recommendedPagesNum = 0;
     List<_Recommended> recommendedEmojis = new List();
     List<Widget> recommendedPages = new List();
+    
+    Map<String, String> allObjects = new Map();
+    allObjects.addAll(widget._smileys);
+    allObjects.addAll(widget._animals);
+    allObjects.addAll(widget._foods);
+    allObjects.addAll(widget._travel);
+    allObjects.addAll(widget._activities);
+    allObjects.addAll(widget._objects);
+    allObjects.addAll(widget._symbols);
+    allObjects.addAll(widget._flags);
+
+    allObjects.forEach((key, value) {
+      getEmojiHistory().forEach((emoji) {
+        if (value == emoji) {
+          recommendedEmojis.add(_Recommended(name: key, emoji: emoji, tier: 1));
+        }
+      });
+    });
 
     if (widget.recommendKeywords != null) {
 
@@ -273,7 +323,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
       allEmojis.addAll(widget._symbols.values);
       allEmojis.addAll(widget._flags.values);
 
-      allNames.forEach((name) {
+      /* allNames.forEach((name) {
 
         int numSplitEqualKeyword = 0;
         int numSplitPartialKeyword = 0;
@@ -305,7 +355,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
           recommendedEmojis.add(_Recommended(name: name, emoji: allEmojis[allNames.indexOf(name)], tier: 3, numSplitPartialKeyword: numSplitPartialKeyword));
         }
 
-      });
+      }); */
       
       recommendedEmojis.sort((a, b) {
 
@@ -385,6 +435,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 ),
                                 onPressed: () {
                                   _Recommended recommended = recommendedEmojis[index + (widget.columns * widget.rows * i)];
+                                  addEmojiToHistory(recommended.emoji);
                                   widget.onEmojiSelected(Emoji(name: recommended.name, emoji: recommended.emoji), widget.selectedCategory);
                                 },
                               )
@@ -401,6 +452,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 ),
                                 onPressed: () {
                                   _Recommended recommended = recommendedEmojis[index + (widget.columns * widget.rows * i)];
+                                  addEmojiToHistory(recommended.emoji);
                                   widget.onEmojiSelected(Emoji(name: recommended.name, emoji: recommended.emoji), widget.selectedCategory);
                                 },
                               )
@@ -462,6 +514,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                               child: Text(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)], style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: () {
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._smileys.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -476,6 +529,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                               child: Text(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)], style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: () {
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._smileys.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -517,6 +571,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._animals.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._animals.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -532,6 +587,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._animals.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._animals.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -574,6 +630,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._foods.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._foods.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -589,6 +646,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._foods.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._foods.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -631,6 +689,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._travel.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._travel.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -646,6 +705,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._travel.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._travel.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -688,6 +748,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._activities.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._activities.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -703,6 +764,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._activities.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._activities.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -745,6 +807,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._objects.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._objects.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -760,6 +823,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._objects.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._objects.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -802,6 +866,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._symbols.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._symbols.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -817,6 +882,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._symbols.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._symbols.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -859,6 +925,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._flags.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._flags.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -874,6 +941,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
+                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._flags.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._flags.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
