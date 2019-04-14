@@ -1,5 +1,4 @@
-# Flutter Emoji Keyboard
-## Version 0.0.2
+# Flutter Emoji Keyboard - Version 0.0.2
 
 [![pub package](https://img.shields.io/pub/v/emoji_picker.svg)](https://pub.dartlang.org/packages/emoji_picker)
 
