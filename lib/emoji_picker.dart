@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
+import 'dart:async';
 
 enum Category {
   RECOMMENDED,
@@ -238,37 +239,40 @@ class Emoji {
 }
 
 class _EmojiPickerState extends State<EmojiPicker> {
-  SharedPreferences prefs;
+  List<String> historyEmojis = new List();
 
-  void initializePrefs() async {
-    prefs = await SharedPreferences.getInstance();
+  @override
+  void initState() {
+    super.initState();
+    getEmojiHistory().then((emojis) {
+      historyEmojis = emojis.reversed.toList();
+    });
   }
 
   /// Returns the emoji history of the user
-  List<String> getEmojiHistory() {
-    try {
-      return prefs.getStringList('lastSelectedEmojis').reversed;
-    } catch (e) {
-      List<String> newHistory = [];
-      prefs.setStringList('lastSelectedEmojis', newHistory);
-      return prefs.getStringList('lastSelectedEmojis').reversed;
+  Future<dynamic> getEmojiHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.containsKey('lastSelectedEmojis')) {
+      return prefs.getStringList('lastSelectedEmojis');
+    } else {
+      prefs.setStringList('lastSelectedEmojis', []);
+      return prefs.getStringList('lastSelectedEmojis');
     }
   }
 
   /// Adds an emoji to the users history, if it was selected
-  void addEmojiToHistory(String emoji) {
-    List<String> history = getEmojiHistory().reversed;
+  void addEmojiToHistory(String emoji) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> history = await getEmojiHistory();
     /// Removes the selected Emoji, if it was selected before
     history.remove(emoji);
     /// Adds the emoji at the last index, so it will appear at first
     history.add(emoji);
     prefs.setStringList('lastSelectedEmojis', history);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    initializePrefs();
+    
+    setState(() {
+      historyEmojis = history;
+    });
   }
 
   @override
@@ -294,198 +298,93 @@ class _EmojiPickerState extends State<EmojiPicker> {
     allObjects.addAll(widget._flags);
 
     allObjects.forEach((key, value) {
-      getEmojiHistory().forEach((emoji) {
+      historyEmojis.forEach((emoji) {
         if (value == emoji) {
           recommendedEmojis.add(_Recommended(name: key, emoji: emoji, tier: 1));
         }
       });
     });
 
-    if (widget.recommendKeywords != null) {
 
-      List<String> allNames = new List();
-      allNames.addAll(widget._smileys.keys);
-      allNames.addAll(widget._animals.keys);
-      allNames.addAll(widget._foods.keys);
-      allNames.addAll(widget._travel.keys);
-      allNames.addAll(widget._activities.keys);
-      allNames.addAll(widget._objects.keys);
-      allNames.addAll(widget._symbols.keys);
-      allNames.addAll(widget._flags.keys);
+    if (recommendedEmojis.length > widget.numRecommended) {
+      recommendedEmojis = recommendedEmojis.getRange(0, widget.numRecommended).toList();
+    }
 
-      List<String> allEmojis = new List();
-      allEmojis.addAll(widget._smileys.values);
-      allEmojis.addAll(widget._animals.values);
-      allEmojis.addAll(widget._foods.values);
-      allEmojis.addAll(widget._travel.values);
-      allEmojis.addAll(widget._activities.values);
-      allEmojis.addAll(widget._objects.values);
-      allEmojis.addAll(widget._symbols.values);
-      allEmojis.addAll(widget._flags.values);
+    if (recommendedEmojis.length != 0) {
+      recommendedPagesNum = (recommendedEmojis.length / (widget.rows * widget.columns)).ceil();
 
-      /* allNames.forEach((name) {
-
-        int numSplitEqualKeyword = 0;
-        int numSplitPartialKeyword = 0;
-
-        widget.recommendKeywords.forEach((keyword) {
-          if (name.toLowerCase() == keyword.toLowerCase()) {
-            recommendedEmojis.add(_Recommended(name: name, emoji: allEmojis[allNames.indexOf(name)], tier: 1));
-          } else {
-            List<String> splitName = name.split(" ");
-
-            splitName.forEach((splitName) {
-              if (splitName.replaceAll(":", "").toLowerCase() == keyword.toLowerCase()) {
-                numSplitEqualKeyword += 1;
-              } else if (splitName.replaceAll(":", "").toLowerCase().contains(keyword.toLowerCase())) {
-                numSplitPartialKeyword += 1;
-              }
-            });
-
-          }
-        });
-
-        if (numSplitEqualKeyword > 0) {
-          if (numSplitEqualKeyword == name.split(" ").length) {
-            recommendedEmojis.add(_Recommended(name: name, emoji: allEmojis[allNames.indexOf(name)], tier: 1));
-          } else {
-            recommendedEmojis.add(_Recommended(name: name, emoji: allEmojis[allNames.indexOf(name)], tier: 2, numSplitEqualKeyword: numSplitEqualKeyword, numSplitPartialKeyword: numSplitPartialKeyword));
-          }
-        } else if (numSplitPartialKeyword > 0) {
-          recommendedEmojis.add(_Recommended(name: name, emoji: allEmojis[allNames.indexOf(name)], tier: 3, numSplitPartialKeyword: numSplitPartialKeyword));
-        }
-
-      }); */
-      
-      recommendedEmojis.sort((a, b) {
-
-        if (a.tier < b.tier) {
-          return -1;
-        } else if (a.tier > b.tier) {
-          return 1;
-        } else {
-          if (a.tier == 1) {
-            if (a.name.split(" ").length > b.name.split(" ").length) {
-              return -1;
-            } else if (a.name.split(" ").length < b.name.split(" ").length) {
-              return 1;
-            } else {
-              return 0;
-            }
-          } else if (a.tier == 2) {
-            if (a.numSplitEqualKeyword > b.numSplitEqualKeyword) {
-              return -1;
-            } else if (a.numSplitEqualKeyword < b.numSplitEqualKeyword) {
-              return 1;
-            } else {
-              if (a.numSplitPartialKeyword > b.numSplitPartialKeyword) {
-                return -1;
-              } else if (a.numSplitPartialKeyword < b.numSplitPartialKeyword) {
-                return 1;
-              } else {
-                if (a.name.split(" ").length < b.name.split(" ").length) {
-                  return -1;
-                } else if (a.name.split(" ").length > b.name.split(" ").length) {
-                  return 1;
-                } else {
-                  return 0;
-                }
-              }
-            }
-          } else if (a.tier == 3) {
-            if (a.numSplitPartialKeyword > b.numSplitPartialKeyword) {
-              return -1;
-            } else if (a.numSplitPartialKeyword < b.numSplitPartialKeyword) {
-              return 1;
-            } else {
-              return 0;
-            }
-          }
-        }
-
-      });
-
-      if (recommendedEmojis.length > widget.numRecommended) {
-        recommendedEmojis = recommendedEmojis.getRange(0, widget.numRecommended).toList();
-      }
-
-      if (recommendedEmojis.length != 0) {
-        recommendedPagesNum = (recommendedEmojis.length / (widget.rows * widget.columns)).ceil();
-
-        for (var i = 0; i < recommendedPagesNum; i++) {
-
-          recommendedPages.add(
-              Container(
-                color: widget.bgColor,
-                child: GridView.count(
-                  shrinkWrap: true,
-                  primary: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  crossAxisCount: widget.columns,
-                  children: List.generate(widget.rows * widget.columns, (index) {
-                    if (index + (widget.columns * widget.rows * i) < recommendedEmojis.length) {
-
-                      switch (widget.buttonMode) {
-                        case ButtonMode.MATERIAL:
-                          return Center(
-                              child: FlatButton(
-                                padding: EdgeInsets.all(0),
-                                child: Center(
-                                  child: Text(recommendedEmojis[index + (widget.columns * widget.rows * i)].emoji, style: TextStyle(fontSize: 24),),
-                                ),
-                                onPressed: () {
-                                  _Recommended recommended = recommendedEmojis[index + (widget.columns * widget.rows * i)];
-                                  addEmojiToHistory(recommended.emoji);
-                                  widget.onEmojiSelected(Emoji(name: recommended.name, emoji: recommended.emoji), widget.selectedCategory);
-                                },
-                              )
-                          );
-                          break;
-                        case ButtonMode.CUPERTINO:
-
-                          return Center(
-                              child: CupertinoButton(
-                                pressedOpacity: 0.4,
-                                padding: EdgeInsets.all(0),
-                                child: Center(
-                                  child: Text(recommendedEmojis[index + (widget.columns * widget.rows * i)].emoji, style: TextStyle(fontSize: 24),),
-                                ),
-                                onPressed: () {
-                                  _Recommended recommended = recommendedEmojis[index + (widget.columns * widget.rows * i)];
-                                  addEmojiToHistory(recommended.emoji);
-                                  widget.onEmojiSelected(Emoji(name: recommended.name, emoji: recommended.emoji), widget.selectedCategory);
-                                },
-                              )
-                          );
-
-                          break;
-                      }
-                    } else {
-                      return Container();
-                    }
-                  }),
-                ),
-              )
-          );
-
-        }
-      } else {
-        recommendedPagesNum = 1;
-
-        if (widget.selectedCategory == Category.RECOMMENDED) {
-          widget.selectedCategory = Category.SMILEYS;
-        }
+      for (var i = 0; i < recommendedPagesNum; i++) {
 
         recommendedPages.add(
-          Container(
-            color: widget.bgColor,
-              child: Center(
-                  child: Text(widget.noRecommendationsText, style: widget.noRecommendationsStyle,)
-              )
-          )
+            Container(
+              color: widget.bgColor,
+              child: GridView.count(
+                shrinkWrap: true,
+                primary: true,
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: widget.columns,
+                children: List.generate(widget.rows * widget.columns, (index) {
+                  if (index + (widget.columns * widget.rows * i) < recommendedEmojis.length) {
+
+                    switch (widget.buttonMode) {
+                      case ButtonMode.MATERIAL:
+                        return Center(
+                            child: FlatButton(
+                              padding: EdgeInsets.all(0),
+                              child: Center(
+                                child: Text(recommendedEmojis[index + (widget.columns * widget.rows * i)].emoji, style: TextStyle(fontSize: 24),),
+                              ),
+                              onPressed: () {
+                                _Recommended recommended = recommendedEmojis[index + (widget.columns * widget.rows * i)];
+                                addEmojiToHistory(recommended.emoji);
+                                widget.onEmojiSelected(Emoji(name: recommended.name, emoji: recommended.emoji), widget.selectedCategory);
+                              },
+                            )
+                        );
+                        break;
+                      case ButtonMode.CUPERTINO:
+
+                        return Center(
+                            child: CupertinoButton(
+                              pressedOpacity: 0.4,
+                              padding: EdgeInsets.all(0),
+                              child: Center(
+                                child: Text(recommendedEmojis[index + (widget.columns * widget.rows * i)].emoji, style: TextStyle(fontSize: 24),),
+                              ),
+                              onPressed: () {
+                                _Recommended recommended = recommendedEmojis[index + (widget.columns * widget.rows * i)];
+                                addEmojiToHistory(recommended.emoji);
+                                widget.onEmojiSelected(Emoji(name: recommended.name, emoji: recommended.emoji), widget.selectedCategory);
+                              },
+                            )
+                        );
+
+                        break;
+                    }
+                  } else {
+                    return Container();
+                  }
+                }),
+              ),
+            )
         );
+
+      }
+    } else {
+      recommendedPagesNum = 1;
+
+      if (widget.selectedCategory == Category.RECOMMENDED) {
+        widget.selectedCategory = Category.SMILEYS;
       }
 
+      recommendedPages.add(
+        Container(
+          color: widget.bgColor,
+            child: Center(
+                child: Text(widget.noRecommendationsText, style: widget.noRecommendationsStyle,)
+            )
+        )
+      );
     }
 
     int smileyPagesNum = (widget._smileys.values.toList().length / (widget.rows * widget.columns)).ceil();
@@ -571,7 +470,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._animals.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._animals.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._animals.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -587,7 +486,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._animals.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._animals.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._animals.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -630,7 +529,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._foods.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._foods.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._foods.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -646,7 +545,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._foods.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._foods.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._foods.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -689,7 +588,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._travel.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._travel.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._travel.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -705,7 +604,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._travel.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._travel.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._travel.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -748,7 +647,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._activities.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._activities.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._activities.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -764,7 +663,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._activities.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._activities.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._activities.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -807,7 +706,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._objects.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._objects.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._objects.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -823,7 +722,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._objects.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._objects.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._objects.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -866,7 +765,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._symbols.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._symbols.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._symbols.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -882,7 +781,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._symbols.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._symbols.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._symbols.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -925,7 +824,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._flags.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._flags.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._flags.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -941,7 +840,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                                 style: TextStyle(fontSize: 24),),
                             ),
                             onPressed: (){
-                              addEmojiToHistory(widget._smileys.values.toList()[index + (widget.columns * widget.rows * i)]);
+                              addEmojiToHistory(widget._flags.values.toList()[index + (widget.columns * widget.rows * i)]);
                               widget.onEmojiSelected(Emoji(name: widget._flags.keys.toList()[index + (widget.columns * widget.rows * i)], emoji: widget._flags.values.toList()[index + (widget.columns * widget.rows * i)]), widget.selectedCategory);
                             },
                           )
@@ -991,7 +890,9 @@ class _EmojiPickerState extends State<EmojiPicker> {
     }
     pageController.addListener(() {
       setState(() {
-
+        getEmojiHistory().then((emojis) {
+          historyEmojis = emojis.reversed.toList();
+        });
       });
     });
 
@@ -1004,7 +905,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
               children: pages,
               controller: pageController,
               onPageChanged: (index) {
-                if (widget.recommendKeywords != null && index < recommendedPagesNum) {
+                if (index < recommendedPagesNum) {
                   widget.selectedCategory = Category.RECOMMENDED;
                 } else if (index < smileyPagesNum + recommendedPagesNum) {
                   widget.selectedCategory = Category.SMILEYS;
@@ -1024,9 +925,10 @@ class _EmojiPickerState extends State<EmojiPicker> {
                   widget.selectedCategory = Category.FLAGS;
                 }
                 setState(() {
-
+                  getEmojiHistory().then((emojis) {
+                    historyEmojis = emojis.reversed.toList();
+                  });
                 });
-
               }
           ),
         ),
@@ -1053,7 +955,6 @@ class _EmojiPickerState extends State<EmojiPicker> {
             color: widget.bgColor,
             child: Row(
               children: <Widget>[
-                widget.recommendKeywords!=null ?
                 SizedBox(
                   width: MediaQuery.of(context).size.width / 9,
                   height: MediaQuery.of(context).size.width / 9,
@@ -1098,11 +999,10 @@ class _EmojiPickerState extends State<EmojiPicker> {
 
                     },
                   ),
-                ) :
-                Container(),
+                ),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
-                  height: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
+                  width: MediaQuery.of(context).size.width / 9,
+                  height: MediaQuery.of(context).size.width / 9,
                   child: widget.buttonMode == ButtonMode.MATERIAL ?
                   FlatButton(
                     padding: EdgeInsets.all(0),
@@ -1145,8 +1045,8 @@ class _EmojiPickerState extends State<EmojiPicker> {
                   ),
                 ),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
-                  height: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
+                  width: MediaQuery.of(context).size.width / 9,
+                  height: MediaQuery.of(context).size.width / 9,
                   child: widget.buttonMode == ButtonMode.MATERIAL ?
                   FlatButton(
                     padding: EdgeInsets.all(0),
@@ -1187,8 +1087,8 @@ class _EmojiPickerState extends State<EmojiPicker> {
                   ),
                 ),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
-                  height: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
+                  width: MediaQuery.of(context).size.width / 9,
+                  height: MediaQuery.of(context).size.width / 9,
                   child: widget.buttonMode == ButtonMode.MATERIAL ?
                   FlatButton(
                     padding: EdgeInsets.all(0),
@@ -1231,8 +1131,8 @@ class _EmojiPickerState extends State<EmojiPicker> {
                   ),
                 ),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
-                  height: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
+                  width: MediaQuery.of(context).size.width / 9,
+                  height: MediaQuery.of(context).size.width / 9,
                   child: widget.buttonMode == ButtonMode.MATERIAL ?
                   FlatButton(
                     padding: EdgeInsets.all(0),
@@ -1275,8 +1175,8 @@ class _EmojiPickerState extends State<EmojiPicker> {
                   ),
                 ),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
-                  height: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
+                  width: MediaQuery.of(context).size.width / 9,
+                  height: MediaQuery.of(context).size.width / 9,
                   child: widget.buttonMode == ButtonMode.MATERIAL ?
                   FlatButton(
                     padding: EdgeInsets.all(0),
@@ -1319,8 +1219,8 @@ class _EmojiPickerState extends State<EmojiPicker> {
                   ),
                 ),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
-                  height: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
+                  width: MediaQuery.of(context).size.width / 9,
+                  height: MediaQuery.of(context).size.width / 9,
                   child: widget.buttonMode == ButtonMode.MATERIAL ?
                   FlatButton(
                     padding: EdgeInsets.all(0),
@@ -1363,8 +1263,8 @@ class _EmojiPickerState extends State<EmojiPicker> {
                   ),
                 ),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
-                  height: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
+                  width: MediaQuery.of(context).size.width / 9,
+                  height: MediaQuery.of(context).size.width / 9,
                   child: widget.buttonMode == ButtonMode.MATERIAL ?
                   FlatButton(
                     padding: EdgeInsets.all(0),
@@ -1407,8 +1307,8 @@ class _EmojiPickerState extends State<EmojiPicker> {
                   ),
                 ),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
-                  height: MediaQuery.of(context).size.width / (widget.recommendKeywords==null ? 8 : 9),
+                  width: MediaQuery.of(context).size.width / 9,
+                  height: MediaQuery.of(context).size.width / 9,
                   child: widget.buttonMode == ButtonMode.MATERIAL ?
                   FlatButton(
                     padding: EdgeInsets.all(0),
