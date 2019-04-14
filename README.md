@@ -11,7 +11,7 @@ A Flutter package that provides an Emoji Keyboard widget.
 * Material Design and Cupertino mode
 
 ## Dependencies
-* shared_preferences: [![pub package](https://pub.dartlang.org/packages/shared_preferences)](https://pub.dartlang.org/packages/shared_preferences)
+* shared_preferences: [![pub package](https://img.shields.io/pub/v/shared_preferences.svg)](https://pub.dartlang.org/packages/shared_preferences)
 
 ## Usage
 To use this plugin, add `emoji_picker` as dependency in your pubspec.yaml file.
