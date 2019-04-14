@@ -245,7 +245,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
   void initState() {
     super.initState();
     getEmojiHistory().then((emojis) {
-      historyEmojis = emojis.reversed.toList();
+      historyEmojis = emojis;
     });
   }
 
@@ -264,10 +264,14 @@ class _EmojiPickerState extends State<EmojiPicker> {
   void addEmojiToHistory(String emoji) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> history = await getEmojiHistory();
+    /// Removes the last frequently used emoji, so it's not bigger as numRecommended
+    if (history.length >= widget.numRecommended) {
+      history.removeLast();
+    }
     /// Removes the selected Emoji, if it was selected before
     history.remove(emoji);
-    /// Adds the emoji at the last index, so it will appear at first
-    history.add(emoji);
+    /// Adds the emoji at the first index, so it will appear as the last used emoji
+    history.insert(0, emoji);
     prefs.setStringList('lastSelectedEmojis', history);
     
     setState(() {
@@ -891,7 +895,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
     pageController.addListener(() {
       setState(() {
         getEmojiHistory().then((emojis) {
-          historyEmojis = emojis.reversed.toList();
+          historyEmojis = emojis;
         });
       });
     });
@@ -926,7 +930,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                 }
                 setState(() {
                   getEmojiHistory().then((emojis) {
-                    historyEmojis = emojis.reversed.toList();
+                    historyEmojis = emojis;
                   });
                 });
               }
