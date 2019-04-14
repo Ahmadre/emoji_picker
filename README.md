@@ -10,6 +10,8 @@ A Flutter package that provides an Emoji Keyboard widget.
 * Optionally add keywords to recommend emojis
 * Material Design and Cupertino mode
 
+## Dependencies
+* shared_preferences: [![pub package](https://pub.dartlang.org/packages/shared_preferences)](https://pub.dartlang.org/packages/shared_preferences)
 
 ## Usage
 To use this plugin, add `emoji_picker` as dependency in your pubspec.yaml file.
@@ -18,6 +20,7 @@ To use this plugin, add `emoji_picker` as dependency in your pubspec.yaml file.
 
 ```
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:emoji_picker/emoji_picker.dart';
 
 void main() => runApp(MainApp());
@@ -47,9 +50,9 @@ class MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return EmojiPicker(
       rows: 3,
-      columns: 7,
-      recommendKeywords: ["racing", "horse"],
-      numRecommended: 10,
+      columns: (MediaQuery.of(context).size.width / 40).round(),
+      numRecommended: 28,
+      buttonMode: defaultTargetPlatform == TargetPlatform.iOS ? ButtonMode.CUPERTINO : ButtonMode.MATERIAL,
       onEmojiSelected: (emoji, category) {
         print(emoji);
       },
