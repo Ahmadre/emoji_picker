@@ -190,7 +190,7 @@ class CategoryIcons {
   }) {
 
     if (recommendationIcon == null) {
-      recommendationIcon = CategoryIcon(icon: Icons.search);
+      recommendationIcon = CategoryIcon(icon: Icons.history);
     }
     if (smileyIcon == null) {
       smileyIcon = CategoryIcon(icon: Icons.tag_faces);
