@@ -319,7 +319,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
               child: GridView.count(
                 shrinkWrap: true,
                 primary: true,
-                physics: NeverScrollableScrollPhysics(),
+                physics: AlwaysScrollableScrollPhysics(),
                 crossAxisCount: widget.columns,
                 children: List.generate(recommendedEmojis.length, (index) {
                     switch (widget.buttonMode) {
@@ -392,7 +392,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
             child: GridView.count(
               shrinkWrap: true,
               primary: true,
-              physics: NeverScrollableScrollPhysics(),
+              physics: AlwaysScrollableScrollPhysics(),
               crossAxisCount: widget.columns,
               children: List.generate(widget.rows * widget.columns, (index) {
                 if (index + (widget.columns * widget.rows * i) < widget._smileys.values.toList().length) {
@@ -448,7 +448,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
             child: GridView.count(
               shrinkWrap: true,
               primary: true,
-              physics: NeverScrollableScrollPhysics(),
+              physics: AlwaysScrollableScrollPhysics(),
               crossAxisCount: widget.columns,
               children: List.generate(widget.rows * widget.columns, (index) {
                 if (index + (widget.columns * widget.rows * i) < widget._animals.values.toList().length) {
@@ -507,7 +507,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
             child: GridView.count(
               shrinkWrap: true,
               primary: true,
-              physics: NeverScrollableScrollPhysics(),
+              physics: AlwaysScrollableScrollPhysics(),
               crossAxisCount: widget.columns,
               children: List.generate(widget.rows * widget.columns, (index) {
                 if (index + (widget.columns * widget.rows * i) < widget._foods.values.toList().length) {
@@ -566,7 +566,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
             child: GridView.count(
               shrinkWrap: true,
               primary: true,
-              physics: NeverScrollableScrollPhysics(),
+              physics: AlwaysScrollableScrollPhysics(),
               crossAxisCount: widget.columns,
               children: List.generate(widget.rows * widget.columns, (index) {
                 if (index + (widget.columns * widget.rows * i) < widget._travel.values.toList().length) {
@@ -625,7 +625,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
             child: GridView.count(
               shrinkWrap: true,
               primary: true,
-              physics: NeverScrollableScrollPhysics(),
+              physics: AlwaysScrollableScrollPhysics(),
               crossAxisCount: widget.columns,
               children: List.generate(widget.rows * widget.columns, (index) {
                 if (index + (widget.columns * widget.rows * i) < widget._activities.values.toList().length) {
@@ -684,7 +684,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
             child: GridView.count(
               shrinkWrap: true,
               primary: true,
-              physics: NeverScrollableScrollPhysics(),
+              physics: AlwaysScrollableScrollPhysics(),
               crossAxisCount: widget.columns,
               children: List.generate(widget.rows * widget.columns, (index) {
                 if (index + (widget.columns * widget.rows * i) < widget._objects.values.toList().length) {
@@ -743,7 +743,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
             child: GridView.count(
               shrinkWrap: true,
               primary: true,
-              physics: NeverScrollableScrollPhysics(),
+              physics: AlwaysScrollableScrollPhysics(),
               crossAxisCount: widget.columns,
               children: List.generate(widget.rows * widget.columns, (index) {
                 if (index + (widget.columns * widget.rows * i) < widget._symbols.values.toList().length) {
@@ -802,7 +802,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
             child: GridView.count(
               shrinkWrap: true,
               primary: true,
-              physics: NeverScrollableScrollPhysics(),
+              physics: AlwaysScrollableScrollPhysics(),
               crossAxisCount: widget.columns,
               children: List.generate(widget.rows * widget.columns, (index) {
                 if (index + (widget.columns * widget.rows * i) < widget._flags.values.toList().length) {
