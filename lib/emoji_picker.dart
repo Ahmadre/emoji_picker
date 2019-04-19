@@ -895,6 +895,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
           height: (MediaQuery.of(context).size.width / widget.columns) * widget.rows,
           width: MediaQuery.of(context).size.width,
           child: PageView (
+              physics: AlwaysScrollableScrollPhysics(),
               children: pages,
               controller: pageController,
               onPageChanged: (index) {
