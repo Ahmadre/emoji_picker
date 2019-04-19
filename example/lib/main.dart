@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:emoji_picker/emoji_picker.dart';
 
 void main() => runApp(MainApp());
@@ -32,19 +33,15 @@ class MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-
-
     return EmojiPicker(
       rows: 3,
-      columns: 7,
-      buttonMode: ButtonMode.MATERIAL,
-      recommendKeywords: ["racing", "horse"],
-      numRecommended: 10,
+      columns: (MediaQuery.of(context).size.width / 40).round(),
+      numRecommended: 28,
+      buttonMode: defaultTargetPlatform == TargetPlatform.iOS ? ButtonMode.CUPERTINO : ButtonMode.MATERIAL,
       onEmojiSelected: (emoji, category) {
         print(emoji);
       },
     );
-
   }
 
 }
